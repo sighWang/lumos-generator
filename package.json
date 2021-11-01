@@ -10,9 +10,12 @@
   "license": "ISC",
   "dependencies": {
     "@ckb-lumos/base": "^0.18.0-rc1",
+    "@ckb-lumos/common-scripts": "^0.18.0-rc1",
     "@ckb-lumos/config-manager": "^0.18.0-rc1",
     "@ckb-lumos/helpers": "^0.18.0-rc1",
     "@ckb-lumos/rpc": "^0.18.0-rc1",
-    "@ckitjs/easy-byte": "^0.0.2"
+    "@ckitjs/easy-byte": "^0.0.2",
+    "@types/node": "^16.11.6",
+    "fs": "^0.0.1-security"
   }
 }
