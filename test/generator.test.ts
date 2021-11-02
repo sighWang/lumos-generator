@@ -1,11 +1,12 @@
+import { expect } from 'chai';
 import { parseAddress, TransactionSkeletonType, sealTransaction } from '@ckb-lumos/helpers';
 import { common } from '@ckb-lumos/common-scripts';
 import { key } from "@ckb-lumos/hd";
 import { RPC } from "@ckb-lumos/rpc";
 import * as fs from 'fs';
-import { compareScriptBinaryWithOnChainData, generateDeployWithTypeIdTx, generateUpgradeTypeIdDataTx, generateDeployWithDataTx } from './generator';
+import { compareScriptBinaryWithOnChainData, generateDeployWithTypeIdTx, generateDeployWithDataTx } from '../src/generator';
 import { getConfig } from '@ckb-lumos/config-manager';
-import { Provider } from './provider';
+import { Provider } from '../src/provider';
 
 const BINARY_PATH = './bin/sudt';
 const sudtBin = fs.readFileSync(BINARY_PATH);
@@ -46,7 +47,7 @@ async function signAndSendTransaction(
   return hash;
 }
 
-async function deployWithDataAndCompare() {
+it('DeployWithData', async function() {
   const txSkeleton = await generateDeployWithDataTx(opt);
   const txHash = await signAndSendTransaction(txSkeleton, ALICE.PRIVATE_KEY, rpc);
   const outPoint = {
@@ -54,10 +55,10 @@ async function deployWithDataAndCompare() {
     index: "0x0"
   }
   const compareResult = await compareScriptBinaryWithOnChainData(sudtBin, outPoint, rpc);
-  console.log(compareResult);
-}
+  expect(compareResult).equal(true);
+}); 
 
-async function deployWithTypeIdAndCompare() {
+it('DeployWithTypeId', async function() {
   const txSkeleton = await generateDeployWithTypeIdTx(opt);
   const txHash = await signAndSendTransaction(txSkeleton, ALICE.PRIVATE_KEY, rpc);
   const outPoint = {
@@ -65,25 +66,5 @@ async function deployWithTypeIdAndCompare() {
     index: "0x0"
   }
   const compareResult = await compareScriptBinaryWithOnChainData(sudtBin, outPoint, rpc);
-  console.log(compareResult);
-
-  // const txWithStatus = await rpc.get_transaction(txHash);
-  // const optUpgrade = {
-  //   cellProvider: new Provider(),
-  //   fromLock: lockScript,
-  //   scriptBinary: sudtBin,
-  //   typeId: txWithStatus!.transaction.outputs[0].type!
-  // }
-
-  // const upgradeTxSkeleton = await generateUpgradeTypeIdDataTx(optUpgrade);
-  // const upgradeTxHash = await signAndSendTransaction(upgradeTxSkeleton, ALICE.PRIVATE_KEY, rpc);
-  // const upgradeOutPoint = {
-  //   tx_hash: upgradeTxHash,
-  //   index: "0x0"
-  // }
-  // const upgradeCompareResult = await compareScriptBinaryWithOnChainData(sudtBin, upgradeOutPoint, rpc);
-  // console.log(upgradeCompareResult);
-}
-
-deployWithDataAndCompare();
-deployWithTypeIdAndCompare();
+  expect(compareResult).equal(true);
+}); 
