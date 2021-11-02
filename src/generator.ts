@@ -53,6 +53,7 @@ export async function generateDeployWithTypeIdTx(options: DeployOptions): Promis
   if (!resolved) throw new Error(`${fromAddress} has no live ckb`);
 
   const typeId = generateTypeIdScript({ previous_output: resolved.out_point!, since: '0x0' }, 0);
+  // console.log("typeid is: ", typeId);
   const output: Cell = {
     cell_output: {
       capacity: '0x0',

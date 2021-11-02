@@ -54,7 +54,7 @@ export function updateCellDeps(txSkeleton: TransactionSkeletonType): Transaction
   });
   txSkeleton = txSkeleton.update('cellDeps', (cellDeps) => {
     return cellDeps.push({
-      out_point: { tx_hash: "0x9bd7e06f3ecf4be0f2fcd2188b23f1b9fcc88e5d4b65a8637b17723bbda3cce8", index: "0x0" },
+      out_point: { tx_hash: "0x6ddc6718014b7ad50121b95bb25ff61b4445b6c57ade514e7d08447e025f9f30", index: "0x0" },
       dep_type: "dep_group",
     });
   });
