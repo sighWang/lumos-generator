@@ -4,9 +4,10 @@ import { common } from '@ckb-lumos/common-scripts';
 import { key } from "@ckb-lumos/hd";
 import { RPC } from "@ckb-lumos/rpc";
 import * as fs from 'fs';
-import { compareScriptBinaryWithOnChainData, generateDeployWithTypeIdTx, generateDeployWithDataTx } from '../src/generator';
+import { compareScriptBinaryWithOnChainData, generateDeployWithTypeIdTx, generateDeployWithDataTx, generateUpgradeTypeIdDataTx } from '../src/generator';
 import { getConfig } from '@ckb-lumos/config-manager';
 import { Provider } from '../src/provider';
+import { Transaction } from '@ckb-lumos/base/lib/core';
 
 const BINARY_PATH = './bin/sudt';
 const sudtBin = fs.readFileSync(BINARY_PATH);
@@ -47,6 +48,28 @@ async function signAndSendTransaction(
   return hash;
 }
 
+function asyncSleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function waitForTransactionCommitted(
+  txHash: string,
+  options: { pollIntervalMs?: number; timeoutMs?: number } = {},
+) {
+  const { pollIntervalMs = 1000, timeoutMs = 120000 } = options;
+  const start = Date.now();
+
+  while (Date.now() - start <= timeoutMs) {
+    const tx = await rpc.get_transaction(txHash);
+    if (tx?.tx_status?.status === 'committed') {
+      console.log("committed")
+      break;
+    }
+    console.log("polling: ", tx?.tx_status?.status)
+    await asyncSleep(pollIntervalMs);
+  }
+}
+
 it('DeployWithData', async function() {
   const txSkeleton = await generateDeployWithDataTx(opt);
   const txHash = await signAndSendTransaction(txSkeleton, ALICE.PRIVATE_KEY, rpc);
@@ -67,4 +90,23 @@ it('DeployWithTypeId', async function() {
   }
   const compareResult = await compareScriptBinaryWithOnChainData(sudtBin, outPoint, rpc);
   expect(compareResult).equal(true);
+
+  const tx = await rpc.get_transaction(txHash);
+  const optUpgrade = {
+    cellProvider: new Provider(),
+    fromLock: lockScript,
+    scriptBinary: sudtBin,
+    typeId: tx!.transaction.outputs[0].type!
+  }
+
+  await waitForTransactionCommitted(txHash);
+
+  const upgradeTxSkeleton = await generateUpgradeTypeIdDataTx(optUpgrade);
+  const upgradeTxHash = await signAndSendTransaction(upgradeTxSkeleton, ALICE.PRIVATE_KEY, rpc);
+  const upgradeOutPoint = {
+    tx_hash: upgradeTxHash,
+    index: "0x0"
+  }
+  const upgradeCompareResult = await compareScriptBinaryWithOnChainData(sudtBin, upgradeOutPoint, rpc);
+  expect(upgradeCompareResult).equal(true);
 }); 
