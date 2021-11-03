@@ -3,6 +3,7 @@ import { common } from '@ckb-lumos/common-scripts';
 import { RPC } from "@ckb-lumos/rpc";
 import { Script, CellProvider, Cell, utils, OutPoint } from "@ckb-lumos/base";
 import { Reader } from "ckb-js-toolkit";
+import { getConfig } from '@ckb-lumos/config-manager';
 
 export function bytesToHex(bytes: Uint8Array): string {
   return `0x${[...bytes].map((b) => b.toString(16).padStart(2, '0')).join('')}`;
@@ -52,10 +53,12 @@ export function updateCellDeps(txSkeleton: TransactionSkeletonType): Transaction
   txSkeleton = txSkeleton.update('cellDeps', (cellDeps) => {
     return cellDeps.clear();
   });
+  const config = getConfig();
+  const secp256k1Config = config.SCRIPTS.SECP256K1_BLAKE160!;
   txSkeleton = txSkeleton.update('cellDeps', (cellDeps) => {
     return cellDeps.push({
-      out_point: { tx_hash: "0x6ddc6718014b7ad50121b95bb25ff61b4445b6c57ade514e7d08447e025f9f30", index: "0x0" },
-      dep_type: "dep_group",
+      out_point: { tx_hash: secp256k1Config.TX_HASH, index: secp256k1Config.INDEX },
+      dep_type: secp256k1Config.DEP_TYPE,
     });
   });
 

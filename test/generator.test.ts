@@ -5,9 +5,9 @@ import { key } from "@ckb-lumos/hd";
 import { RPC } from "@ckb-lumos/rpc";
 import * as fs from 'fs';
 import { compareScriptBinaryWithOnChainData, generateDeployWithTypeIdTx, generateDeployWithDataTx, generateUpgradeTypeIdDataTx } from '../src/generator';
-import { getConfig } from '@ckb-lumos/config-manager';
+import { getConfig, initializeConfig } from '@ckb-lumos/config-manager';
 import { Provider } from '../src/provider';
-import { Transaction } from '@ckb-lumos/base/lib/core';
+import { dirname } from 'path'; 
 
 const BINARY_PATH = './bin/sudt';
 const sudtBin = fs.readFileSync(BINARY_PATH);
@@ -21,18 +21,51 @@ const ALICE = {
   //LOCKHASH: "0x173924b290925c48a9cd55d00360fd6ad81e2081c8e0ada42dce1aafd2cfc1cf"
 };
 
-const defaulyConfig = getConfig();
-const config = {
-  PREFIX: "ckt",
-  SCRIPTS: defaulyConfig.SCRIPTS
+function nonNullable<X>(x: X): NonNullable<X> {
+  if (x == null) throw new Error('Null check failed');
+  return x as NonNullable<X>;
 }
-const lockScript = parseAddress(ALICE.ADDRESS, { config });
 
-const opt = {
-  cellProvider: new Provider(),
-  fromLock: lockScript,
-  scriptBinary: sudtBin,
+async function generateConfig() {
+  let config = {
+    "PREFIX": "ckt",
+    "SCRIPTS": {
+      "SECP256K1_BLAKE160": {
+        "CODE_HASH": "0x9bd7e06f3ecf4be0f2fcd2188b23f1b9fcc88e5d4b65a8637b17723bbda3cce8",
+        "HASH_TYPE": "type",
+        "TX_HASH": "",
+        "INDEX": "0x0",
+        "DEP_TYPE": "dep_group",
+        "SHORT_ID": 0
+      }
+    }
+  }
+
+  const genesisBlock = await rpc.get_block_by_number('0x0');
+  if (!genesisBlock) throw new Error('cannot load genesis block');
+  const secp256k1DepTxHash = nonNullable(genesisBlock.transactions[1]).hash;
+
+  config.SCRIPTS.SECP256K1_BLAKE160.TX_HASH = secp256k1DepTxHash!;
+
+  fs.promises.mkdir(dirname("config.json"), {recursive: true}).then(x => fs.promises.writeFile("config.json", JSON.stringify(config)))
+  
 }
+
+let opt;
+
+before(async () => {
+  await generateConfig();
+  initializeConfig();
+
+  const config = getConfig();
+  const lockScript = parseAddress(ALICE.ADDRESS, { config });
+
+  opt = {
+    cellProvider: new Provider(),
+    fromLock: lockScript,
+    scriptBinary: sudtBin,
+  }
+})
 
 async function signAndSendTransaction(
   txSkeleton: TransactionSkeletonType,
@@ -54,6 +87,7 @@ function asyncSleep(ms: number): Promise<void> {
 
 async function waitForTransactionCommitted(
   txHash: string,
+  provider: Provider,
   options: { pollIntervalMs?: number; timeoutMs?: number } = {},
 ) {
   const { pollIntervalMs = 1000, timeoutMs = 120000 } = options;
@@ -68,6 +102,17 @@ async function waitForTransactionCommitted(
     console.log("polling: ", tx?.tx_status?.status)
     await asyncSleep(pollIntervalMs);
   }
+
+  const rpcTip = Number(await rpc.get_tip_block_number());
+
+  while (Date.now() - start <= timeoutMs) {
+    const providerTip = await provider.get_tip();
+    if (Number(providerTip.block_number) >= rpcTip) return;
+
+    await asyncSleep(pollIntervalMs);
+  }
+
+  return;
 }
 
 it('DeployWithData', async function() {
@@ -94,12 +139,12 @@ it('DeployWithTypeId', async function() {
   const tx = await rpc.get_transaction(txHash);
   const optUpgrade = {
     cellProvider: new Provider(),
-    fromLock: lockScript,
+    fromLock: opt.lockScript,
     scriptBinary: sudtBin,
     typeId: tx!.transaction.outputs[0].type!
   }
 
-  await waitForTransactionCommitted(txHash);
+  await waitForTransactionCommitted(txHash, optUpgrade.cellProvider);
 
   const upgradeTxSkeleton = await generateUpgradeTypeIdDataTx(optUpgrade);
   const upgradeTxHash = await signAndSendTransaction(upgradeTxSkeleton, ALICE.PRIVATE_KEY, rpc);

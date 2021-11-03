@@ -1,4 +1,4 @@
-import { QueryOptions, Script, Hexadecimal, CellCollectorResults } from '@ckb-lumos/base';
+import { QueryOptions, Script, Hexadecimal, CellCollectorResults, Tip } from '@ckb-lumos/base';
 import axios from "axios";
 
 enum ScriptType {
@@ -21,8 +21,8 @@ interface SearchKey {
 
 async function request(
   method: string,
-  ckbIndexerUrl: string,
-  params?: any
+  params?: any,
+  ckbIndexerUrl: string = 'http://localhost:8116',
 ): Promise<any> {
   const data = {
     id: 0,
@@ -90,7 +90,7 @@ export class Provider {
                 cursor,
               ];
 
-              const res = await request('get_cells', 'http://localhost:8116', params);
+              const res = await request('get_cells', params);
               const liveCells = res.objects;
               cursor = res.last_cursor;
               for (const cell of liveCells) {
@@ -111,5 +111,10 @@ export class Provider {
         };
       },
     };
+  }
+
+  async get_tip(): Promise<Tip> {
+    const res = await request("get_tip");
+    return res as Tip;
   }
 }

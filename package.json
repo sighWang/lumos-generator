@@ -19,7 +19,8 @@
     "@ckitjs/easy-byte": "^0.0.2",
     "@types/node": "^16.11.6",
     "axios": "^0.24.0",
-    "fs": "^0.0.1-security"
+    "fs": "^0.0.1-security",
+    "path": "^0.12.7"
   },
   "devDependencies": {
     "@types/chai": "^4.2.22",
