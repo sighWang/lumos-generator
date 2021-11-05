@@ -115,16 +115,16 @@ async function waitForTransactionCommitted(
   return;
 }
 
-it('DeployWithData', async function() {
-  const txSkeleton = await generateDeployWithDataTx(opt);
-  const txHash = await signAndSendTransaction(txSkeleton, ALICE.PRIVATE_KEY, rpc);
-  const outPoint = {
-    tx_hash: txHash,
-    index: "0x0"
-  }
-  const compareResult = await compareScriptBinaryWithOnChainData(sudtBin, outPoint, rpc);
-  expect(compareResult).equal(true);
-}); 
+// it('DeployWithData', async function() {
+//   const txSkeleton = await generateDeployWithDataTx(opt);
+//   const txHash = await signAndSendTransaction(txSkeleton, ALICE.PRIVATE_KEY, rpc);
+//   const outPoint = {
+//     tx_hash: txHash,
+//     index: "0x0"
+//   }
+//   const compareResult = await compareScriptBinaryWithOnChainData(sudtBin, outPoint, rpc);
+//   expect(compareResult).equal(true);
+// }); 
 
 it('DeployWithTypeId', async function() {
   const txSkeleton = await generateDeployWithTypeIdTx(opt);
@@ -139,7 +139,7 @@ it('DeployWithTypeId', async function() {
   const tx = await rpc.get_transaction(txHash);
   const optUpgrade = {
     cellProvider: new Provider(),
-    fromLock: opt.lockScript,
+    fromLock: opt.fromLock,
     scriptBinary: sudtBin,
     typeId: tx!.transaction.outputs[0].type!
   }
