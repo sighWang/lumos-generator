@@ -22,7 +22,7 @@
             ],
             "sourceMaps": true,
             "smartStep": true,
-            "internalConsoleOptions": "openOnSessionStart",
+            // "internalConsoleOptions": "openOnSessionStart",
             "preLaunchTask": "tsc: build - tsconfig.json",
             "outFiles": [
                 "${workspaceFolder}/**/*.js"

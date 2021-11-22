@@ -22,7 +22,7 @@ interface SearchKey {
 async function request(
   method: string,
   params?: any,
-  ckbIndexerUrl: string = 'http://localhost:8116',
+  ckbIndexerUrl: string = 'https://testnet.ckb.dev/indexer',
 ): Promise<any> {
   const data = {
     id: 0,
